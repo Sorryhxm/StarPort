@@ -600,11 +600,13 @@ $('goBtn').onclick = async () => {
       const title = (previewKey.startsWith(url + '|') && preview?.title) || names[0] || url;
       addHistory({ title, url, files: lastFiles, kind, at: Date.now() });
       warp(title);
+      api.notify({ title: tr('warpGot'), body: title }).catch(() => {});
     } else if (code === -1) {
       finishJobs(false, true);
       showResult('error', tr('cancelled'), '');
     } else {
       finishJobs(false);
+      api.notify({ title: tr('failed'), body: url }).catch(() => {});
       if (/Sign in to confirm|--cookies-from-browser/.test(error)) {
         // IP ถูก YouTube สงสัยว่าเป็นบอท แก้ได้ด้วยการเข้าสู่ระบบ YouTube ให้ yt-dlp ใช้คุกกี้
         showResult('error', tr('failed'), tr(toolStatus.youtubeSignedIn ? 'botCheckSignedIn' : 'botCheck'));
@@ -616,6 +618,7 @@ $('goBtn').onclick = async () => {
     }
   } catch (error) {
     finishJobs(false);
+    api.notify({ title: tr('failed'), body: cleanError(error) }).catch(() => {});
     showResult('error', tr('failed'), cleanError(error));
     log(cleanError(error), 'err');
   } finally {

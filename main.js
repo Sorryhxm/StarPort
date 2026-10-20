@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, Notification } = require('electron');
 const { spawn } = require('child_process');
 const { createHash, randomBytes } = require('node:crypto');
 const { StringDecoder } = require('node:string_decoder');
@@ -14,6 +14,8 @@ const { cleanSession, createPotProvider, writeCookieFile, writeGuestCookies } = 
 
 const WIN = process.platform === 'win32';
 const MAC = process.platform === 'darwin';
+// Windows แสดงการแจ้งเตือนตามชื่อแอปนี้ (ต้องตรงกับ appId ใน package.json)
+if (WIN) app.setAppUserModelId('com.starport.app');
 const EXE = WIN ? '.exe' : '';
 // แอปที่เปิดจาก Finder ไม่ได้ PATH ของ shell มา จึงเพิ่มที่อยู่ของ Homebrew ให้หา ffmpeg ที่ติดตั้งไว้เจอ
 if (MAC) process.env.PATH = ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].join(':');
@@ -406,6 +408,23 @@ ipcMain.handle('preview', async (_e, { url, playlist = false, language = 'th' } 
     count: info._type === 'playlist' ? (info.entries || []).length : 0,
     thumbnail: await thumbnailData(info.thumbnail || info.thumbnails?.at(-1)?.url),
   };
+});
+
+// แจ้งเตือนเมื่องานจบ เฉพาะตอนหน้าต่างไม่ได้อยู่ด้านหน้า คลิกแล้วเปิดหน้าต่างกลับมา
+ipcMain.handle('notify', (_e, { title, body } = {}) => {
+  if (!Notification.isSupported() || !win || win.isDestroyed() || win.isFocused()) return false;
+  const note = new Notification({
+    title: String(title || '').slice(0, 120), body: String(body || '').slice(0, 240),
+    icon: path.join(__dirname, 'build', 'icon.png'),
+  });
+  note.on('click', () => {
+    if (win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+  note.show();
+  return true;
 });
 
 ipcMain.handle('set-theme', (_e, theme) => {

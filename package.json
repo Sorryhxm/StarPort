@@ -41,7 +41,8 @@
       "docs/language.js",
       "fonts/*.woff2",
       "fonts/OFL.txt",
-      "build/icon.svg"
+      "build/icon.svg",
+      "build/icon.png"
     ],
     "extraResources": [
       {

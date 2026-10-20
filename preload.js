@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('api', {
   setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
   download: (opts) => ipcRenderer.invoke('download', opts),
   preview: (opts) => ipcRenderer.invoke('preview', opts),
+  notify: (opts) => ipcRenderer.invoke('notify', opts),
   cancel: () => ipcRenderer.invoke('cancel'),
   onProgress: (cb) => ipcRenderer.on('progress', (_e, d) => cb(d)),
   onInstallProgress: (cb) => ipcRenderer.on('install-progress', (_e, d) => cb(d)),
