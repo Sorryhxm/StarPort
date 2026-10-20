@@ -9,7 +9,6 @@
 A video and audio downloader for Windows.
 
 [![Latest release](https://img.shields.io/github/v/release/Sorryhxm/StarPort?style=flat-square&color=e6c47f&label=release)](https://github.com/Sorryhxm/StarPort/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Sorryhxm/StarPort/total?style=flat-square&color=2b2f6e)](https://github.com/Sorryhxm/StarPort/releases)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-2b2f6e?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2b2f6e?style=flat-square)](LICENSE)
 
