@@ -293,6 +293,18 @@
     .trim-fields input[type="text"] { width: 96px; height: 38px; padding: 0 10px; text-align: center; font-variant-numeric: tabular-nums; }
     .trim-fields .hint { margin: 0; }
 
+    /* คิว: แถวบางเรียงตามลำดับที่จะดาวน์โหลด */
+    .queue { display: flex; flex-direction: column; gap: 6px; }
+    .queue-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .queue-head .label { margin: 0; }
+    .queue-head .compact-button { min-height: 30px; padding: 2px 12px; font-size: var(--text-label); }
+    .queue-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+    .queue-item { display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 12px; border: 1px solid var(--line); border-left: 2px solid var(--gold); background: var(--field); font-size: var(--text-control); }
+    .queue-item-title { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .queue-item-meta { color: var(--muted); font-size: var(--text-meta); white-space: nowrap; }
+    .queue-remove { width: 28px; height: 28px; flex: none; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; }
+    .queue-remove:hover { color: var(--error); }
+
     #historyBtn { width: 34px; padding: 0; display: grid; place-items: center; }
     #historyBtn svg { width: 16px; height: 16px; }
     /* ประวัติ: ลิ้นชักด้านขวาแบบเมนูโทรศัพท์ในเกม */
@@ -532,6 +544,11 @@
         <button class="primary" id="goBtn" type="button" disabled><span id="goText" data-i18n="start">เริ่มดาวน์โหลด</span></button>
         <button class="compact-button cancel hidden" id="cancelBtn" type="button" data-i18n="cancel">ยกเลิก</button>
       </div>
+    </div>
+
+    <div class="queue hidden" id="queue">
+      <div class="queue-head"><span class="label" id="queueCount"></span><button class="compact-button" id="queueClear" type="button" data-i18n="queueClear">ล้างคิว</button></div>
+      <ol class="queue-list" id="queueList"></ol>
     </div>
 
     <div class="result hidden" id="result" role="status" aria-live="polite">

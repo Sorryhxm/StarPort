@@ -59,6 +59,8 @@ const words = {
     history: 'ประวัติ', historyTitle: 'ประวัติการดาวน์โหลด', historyEmpty: 'ยังไม่มีประวัติ ไฟล์ที่ดาวน์โหลดเสร็จจะแสดงที่นี่',
     historyClear: 'ล้างประวัติ', reuse: 'ใช้ลิงก์นี้', fileMissing: 'ไม่พบไฟล์นี้แล้ว อาจถูกย้ายหรือลบ', close: 'ปิด',
     warpGot: 'ดาวน์โหลดเสร็จแล้ว',
+    addToQueue: 'เพิ่มเข้าคิว', queueCount: 'รอคิว {n} รายการ', queued: 'เพิ่ม {n} ลิงก์เข้าคิวแล้ว',
+    queueClear: 'ล้างคิว', remove: 'เอาออกจากคิว',
   },
   en: {
     appTitle: 'Video Downloader', checking: 'Checking tools…', notInstalled: 'Tools not installed', ready: 'Ready', missing: 'Missing',
@@ -113,6 +115,8 @@ const words = {
     history: 'History', historyTitle: 'Download history', historyEmpty: 'Nothing here yet. Finished downloads show up here.',
     historyClear: 'Clear history', reuse: 'Use link', fileMissing: 'This file is gone. It may have been moved or deleted.', close: 'Close',
     warpGot: 'Download complete',
+    addToQueue: 'Add to queue', queueCount: '{n} waiting', queued: 'Added {n} to the queue',
+    queueClear: 'Clear queue', remove: 'Remove from queue',
   },
 };
 
@@ -150,7 +154,8 @@ function applyLanguage() {
   for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', tr(el.dataset.i18nAria));
   $('langBtn').textContent = lang === 'th' ? 'EN' : 'ไทย';
   $('langBtn').setAttribute('aria-label', tr('switchLanguage'));
-  if (running) $('goText').textContent = tr('downloading');
+  if (running) $('goText').textContent = tr('addToQueue');
+  renderQueue();
   applyTheme();
   renderAppUpdate();
   renderDetected();
@@ -334,7 +339,7 @@ function renderStatus() {
   $('youtubeOutBtn').disabled = running;
   $('setup').classList.toggle('hidden', !checked || ready);
   $('main').classList.remove('hidden');
-  $('goBtn').disabled = !ready || running;
+  $('goBtn').disabled = !ready;
   $('goBtn').title = ready ? '' : tr('installRequired');
   setTool('t-ytdlp', !!toolStatus.version);
   setTool('t-ffmpeg', !!toolStatus.ffmpeg,
@@ -461,7 +466,7 @@ $('clearBtn').onclick = () => { setUrl(''); $('url').focus(); };
 
 $('pasteBtn').onclick = async () => {
   try {
-    setUrl(await navigator.clipboard.readText());
+    takeLinks(await navigator.clipboard.readText());
     $('url').focus();
   } catch {
     toast(tr('clipboardFailed'));
@@ -470,11 +475,13 @@ $('pasteBtn').onclick = async () => {
 
 // วางลิงก์ได้จากทุกที่ในหน้าต่าง และลากลิงก์มาวางได้
 document.addEventListener('paste', (event) => {
-  if (event.target instanceof HTMLInputElement) return;
   const text = event.clipboardData?.getData('text') || '';
+  // ช่องข้อความตัดบรรทัดทิ้งตอนวาง หลายลิงก์จะต่อกันจนใช้ไม่ได้ จึงรับเองถ้ามีมากกว่าหนึ่งลิงก์
+  const many = (text.match(/https?:\/\//gi) || []).length > 1;
+  if (event.target instanceof HTMLInputElement && !(many && event.target.id === 'url')) return;
   if (!text.trim()) return;
   event.preventDefault();
-  setUrl(text);
+  takeLinks(text);
   $('url').focus();
 });
 document.addEventListener('dragover', (event) => {
@@ -488,8 +495,8 @@ document.addEventListener('drop', (event) => {
   event.preventDefault();
   document.body.classList.remove('dragging');
   const text = event.dataTransfer?.getData('text/uri-list') || event.dataTransfer?.getData('text') || '';
-  const link = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
-  if (link) setUrl(link);
+  const links = text.split(/\r?\n/).filter((line) => line && !line.startsWith('#')).join('\n');
+  if (links) takeLinks(links);
 });
 
 $('pickBtn').onclick = async () => {
@@ -556,24 +563,104 @@ $('showBtn').onclick = () => api.showFile(lastFiles[lastFiles.length - 1]);
 function setRunning(value) {
   running = value;
   $('goBtn').classList.toggle('working', value);
-  $('goText').textContent = tr(value ? 'downloading' : 'start');
+  $('goText').textContent = tr(value ? 'addToQueue' : 'start');
   $('cancelBtn').classList.toggle('hidden', !value);
   $('cancelBtn').disabled = false;
   renderStatus();
 }
 
-$('goBtn').onclick = async () => {
+// ---------- queue ----------
+// แต่ละงานจำตัวเลือกไว้ตอนกดเพิ่ม เปลี่ยนตัวเลือกทีหลังไม่กระทบงานที่รออยู่
+const queue = [];
+let pumping = false;
+
+function jobFrom(url, withTrim) {
+  const kind = picked('kind');
+  const playlist = $('playlist').checked;
+  return {
+    url, kind, playlist, folder,
+    quality: kind === 'audio' ? picked('aq') : picked('vq'),
+    section: withTrim ? trimSection() : null,
+    encoder: $('encoder').value, output: picked('out'),
+    title: (previewKey === `${url}|${playlist}` && preview?.title) || '',
+  };
+}
+
+function renderQueue() {
+  $('queue').classList.toggle('hidden', !queue.length);
+  $('queueCount').textContent = tr('queueCount', { n: queue.length });
+  const list = $('queueList');
+  list.replaceChildren();
+  queue.forEach((job, index) => {
+    const row = document.createElement('li');
+    row.className = 'queue-item';
+    const title = document.createElement('span');
+    title.className = 'queue-item-title';
+    title.textContent = job.title || job.url;
+    title.title = job.url;
+    const meta = document.createElement('span');
+    meta.className = 'queue-item-meta';
+    meta.textContent = job.kind === 'audio' ? job.quality.toUpperCase() : job.quality === 'best' ? tr('best') : `${job.quality}p`;
+    const remove = document.createElement('button');
+    remove.className = 'queue-remove';
+    remove.type = 'button';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', tr('remove'));
+    remove.onclick = () => { queue.splice(index, 1); renderQueue(); };
+    row.append(title, meta, remove);
+    list.append(row);
+  });
+}
+
+function enqueue(jobs) {
+  const busyNow = running || pumping;
+  queue.push(...jobs);
+  renderQueue();
+  if (busyNow || jobs.length > 1) toast(tr('queued', { n: jobs.length }));
+  // ระหว่างที่มีงานอยู่ ล้างช่องลิงก์ให้วางลิงก์ถัดไปได้ทันที
+  if (busyNow) setUrl('');
+  pump();
+}
+
+async function pump() {
+  if (pumping) return;
+  pumping = true;
+  try {
+    while (queue.length) {
+      const job = queue.shift();
+      renderQueue();
+      await runJob(job);
+    }
+  } finally {
+    pumping = false;
+  }
+}
+
+$('queueClear').onclick = () => { queue.length = 0; renderQueue(); };
+
+// รับข้อความที่วางหรือลากมา: ถ้ามีหลายลิงก์จะเข้าคิวทั้งหมด ถ้ามีลิงก์เดียวใส่ในช่องลิงก์ตามเดิม
+function takeLinks(text) {
+  const links = [...new Set(String(text).match(/https?:\/\/[^\s"'<>]+/gi) || [])];
+  if (links.length < 2 || $('goBtn').disabled) return setUrl(links[0] || String(text));
+  enqueue(links.map((url) => jobFrom(url, false)));
+}
+
+$('goBtn').onclick = () => {
   const url = $('url').value.trim();
   if (!url) return showUrlError(tr('urlRequired'));
   if (!/^https?:\/\/\S+$/i.test(url)) return showUrlError(tr('urlInvalid'));
   showUrlError('');
-  let section;
+  let job;
   try {
-    section = trimSection();
+    job = jobFrom(url, true);
   } catch (error) {
     return toast(error.message);
   }
+  enqueue([job]);
+};
 
+async function runJob(job) {
+  const { url, kind } = job;
   const taskLanguage = lang;
   setRunning(true);
   resetJobs();
@@ -583,12 +670,10 @@ $('goBtn').onclick = async () => {
   setJob('download', { label: tr('preparing') });
   $('log').replaceChildren();
 
-  const kind = picked('kind');
-  const quality = kind === 'audio' ? picked('aq') : picked('vq');
   try {
     const { code, files, error } = await api.download({
-      url, kind, quality, folder, playlist: $('playlist').checked, section,
-      encoder: $('encoder').value, output: picked('out'), language: taskLanguage,
+      url, kind, quality: job.quality, folder: job.folder, playlist: job.playlist, section: job.section,
+      encoder: job.encoder, output: job.output, language: taskLanguage,
     });
     lastFiles = files || [];
     const names = lastFiles.map((file) => file.split(/[\\/]/).pop());
@@ -597,16 +682,19 @@ $('goBtn').onclick = async () => {
       const more = names.length > 1 ? tr('andMore', { n: names.length - 1 }) : '';
       showResult('ok', names.length > 1 ? tr('savedMany', { n: names.length }) : tr('savedOne'), (names[0] || '') + more);
       log(tr('finished'), 'ok');
-      const title = (previewKey.startsWith(url + '|') && preview?.title) || names[0] || url;
+      const title = job.title || names[0] || url;
       addHistory({ title, url, files: lastFiles, kind, at: Date.now() });
-      warp(title);
-      api.notify({ title: tr('warpGot'), body: title }).catch(() => {});
+      // ฉากวาร์ปและการแจ้งเตือนเล่นเมื่อคิวหมดแล้วเท่านั้น จะได้ไม่ขึ้นซ้ำทุกไฟล์
+      if (!queue.length) {
+        warp(title);
+        api.notify({ title: tr('warpGot'), body: title }).catch(() => {});
+      }
     } else if (code === -1) {
       finishJobs(false, true);
       showResult('error', tr('cancelled'), '');
     } else {
       finishJobs(false);
-      api.notify({ title: tr('failed'), body: url }).catch(() => {});
+      api.notify({ title: tr('failed'), body: job.title || url }).catch(() => {});
       if (/Sign in to confirm|--cookies-from-browser/.test(error)) {
         // IP ถูก YouTube สงสัยว่าเป็นบอท แก้ได้ด้วยการเข้าสู่ระบบ YouTube ให้ yt-dlp ใช้คุกกี้
         showResult('error', tr('failed'), tr(toolStatus.youtubeSignedIn ? 'botCheckSignedIn' : 'botCheck'));
@@ -624,7 +712,7 @@ $('goBtn').onclick = async () => {
   } finally {
     setRunning(false);
   }
-};
+}
 
 $('youtubeInBtn').onclick = async () => {
   const button = $('youtubeInBtn');
