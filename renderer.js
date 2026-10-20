@@ -1,0 +1,841 @@
+const $ = (id) => document.getElementById(id);
+const picked = (name) => document.querySelector(`input[name=${name}]:checked`).value;
+const store = {
+  get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+  set: (key, value) => { try { localStorage.setItem(key, value); } catch {} },
+};
+
+const words = {
+  th: {
+    appTitle: 'ดาวน์โหลดวิดีโอ', checking: 'กำลังตรวจสอบ…', notInstalled: 'ยังไม่ได้ติดตั้งเครื่องมือ', ready: 'พร้อมใช้งาน', missing: 'ยังไม่มี',
+    setupTitle: 'เริ่มใช้งานครั้งแรก', setupDescription: 'ติดตั้งส่วนที่จำเป็นครั้งเดียว แล้วเริ่มดาวน์โหลดได้ทันที',
+    setupNote: 'ดาวน์โหลดจาก GitHub ทางการของ yt-dlp',
+    ytdlpDescription: 'ตัวดาวน์โหลด · ~18 MB', ffmpegDescription: 'แปลงวิดีโอและเสียง · ~150 MB',
+    headline: 'วางลิงก์ แล้วเลือกไฟล์', subhead: 'รองรับ YouTube, TikTok, Facebook, X และอีกหลายเว็บไซต์',
+    urlLabel: 'ลิงก์วิดีโอ', urlPlaceholder: 'วางลิงก์วิดีโอ เช่น https://youtu.be/…', paste: 'วางลิงก์', clear: 'ล้างลิงก์',
+    format: 'รูปแบบไฟล์', video: 'วิดีโอ', audioOnly: 'เสียง',
+    resolution: 'ความละเอียด', best: 'สูงสุด', available: 'ที่มี', smallFile: 'ไฟล์เล็ก',
+    videoHint: 'เลือกต้นทางที่คมชัดที่สุดตามความละเอียด แล้วแปลงตามรูปแบบที่เลือก',
+    audioFormat: 'ไฟล์เสียง', smallPlay: 'เปิดได้ทุกที่', lossless: 'ไม่เสียคุณภาพ', uncompressed: 'ไม่บีบอัด',
+    outputLabel: 'ไฟล์วิดีโอที่ได้',
+    h264Tag: 'พร้อมตัดต่อ', h264Desc: 'เปิดได้ใน Premiere, Resolve, CapCut และทุกเครื่องเล่น',
+    hevcTag: 'คุณภาพสูง', hevcDesc: 'คงรายละเอียดภาพ เหมาะกับโปรแกรมรุ่นใหม่',
+    originalTitle: 'ต้นฉบับ', originalTag: 'เร็วที่สุด', originalDesc: 'ไม่แปลงไฟล์ คุณภาพต้นฉบับ (AV1/VP9)',
+    saveTo: 'บันทึกที่', choose: 'เปลี่ยน', open: 'เปิดโฟลเดอร์',
+    encoderLabel: 'ตัวเข้ารหัสวิดีโอ', auto: 'อัตโนมัติ', recommended: 'แนะนำ',
+    encoderAutoDesc: 'เลือก GPU ที่เร็วที่สุดในเครื่องให้เอง', autoUsing: 'ใช้ ',
+    encoderNvidiaDesc: 'การ์ดจอ NVIDIA GeForce / RTX', encoderIntelDesc: 'กราฟิก Intel ในตัวหรือ Arc',
+    encoderAmdDesc: 'กราฟิก AMD ในตัวหรือ Radeon', encoderAppleDesc: 'ชิป Apple Silicon หรือ Mac รุ่น Intel', encoderHybridDesc: 'แบ่งงานระหว่าง CPU และ GPU',
+    hybrid: 'CPU ถอดรหัส + GPU เข้ารหัส', hybridBadge: 'ผสม', encoderCpuDesc: 'x264 / x265 ใช้ได้ทุกเครื่อง',
+    detected: 'พบในเครื่อง', notDetected: 'ไม่พบ',
+    playlist: 'ดาวน์โหลดทั้งเพลย์ลิสต์',
+    start: 'เริ่มดาวน์โหลด', cancel: 'ยกเลิก', update: 'อัปเดต yt-dlp', updateTitle: 'อัปเดต yt-dlp เป็นรุ่นล่าสุด',
+    install: 'ติดตั้งเครื่องมือ', installRequired: 'ติดตั้ง yt-dlp และ FFmpeg ก่อนดาวน์โหลด',
+    manualInstall: 'ติดตั้งเองจากแพ็กเกจ', installing: 'กำลังติดตั้ง…', extracting: 'กำลังแตกไฟล์…',
+    installSuccess: 'ติดตั้งเรียบร้อย พร้อมใช้งาน', installFailed: 'ติดตั้งไม่สำเร็จ: ',
+    updating: 'กำลังอัปเดต…', updated: 'อัปเดต yt-dlp แล้ว', updateFailed: 'อัปเดตไม่สำเร็จ: ',
+    appUpdateReady: 'รีสตาร์ตเพื่ออัปเดต', appUpdateAvailable: 'มีเวอร์ชันใหม่', appUpdateTitle: 'StarPort v{version} พร้อมใช้งาน',
+    appUpdateBusy: 'รอให้ดาวน์โหลดเสร็จก่อน แล้วค่อยรีสตาร์ตเพื่ออัปเดต',
+    clipboardFailed: 'อ่านคลิปบอร์ดไม่ได้ วางลิงก์ด้วย Ctrl+V',
+    urlRequired: 'วางลิงก์วิดีโอก่อน', urlInvalid: 'ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://',
+    downloading: 'กำลังทำงาน…', starting: 'กำลังเริ่ม…', preparing: 'กำลังเตรียมดาวน์โหลด',
+    finished: 'เสร็จแล้ว', savedOne: 'บันทึกไฟล์แล้ว', savedMany: 'บันทึกแล้ว {n} ไฟล์', andMore: ' และอีก {n} ไฟล์',
+    cancelled: 'ยกเลิกแล้ว', failed: 'ดาวน์โหลดไม่สำเร็จ', failedHint: 'ตรวจลิงก์ หรือลองอัปเดต yt-dlp แล้วลองใหม่',
+    remaining: 'เหลือ ', item: 'ไฟล์ ', switchLanguage: 'เปลี่ยนภาษา', folderMissing: 'ไม่พบโฟลเดอร์นี้',
+    languageNotice: 'ภาษาเริ่มต้นตามภาษาและเขตเวลาของเครื่อง',
+    toggleTheme: 'สลับธีมสว่าง/มืด', details: 'รายละเอียดการทำงาน', showInFolder: 'แสดงในโฟลเดอร์',
+    trustLocal: 'ทำงานในเครื่องคุณ ไม่ต้องสมัครบัญชี', trustTools: 'ใช้ yt-dlp และ FFmpeg โอเพนซอร์ส',
+    trustFiles: 'ไฟล์บันทึกตรงลงโฟลเดอร์ที่คุณเลือก',
+    botCheck: 'YouTube ขอให้ยืนยันว่าไม่ใช่บอท เข้าสู่ระบบ YouTube ในแอปครั้งเดียว แล้วแอปจะลองดาวน์โหลดใหม่ให้',
+    botCheckSignedIn: 'YouTube ยังขอให้ยืนยันว่าไม่ใช่บอท ลองเข้าสู่ระบบ YouTube ใหม่อีกครั้ง',
+    youtubeSignIn: 'เข้าสู่ระบบ YouTube', youtubeSignedIn: 'เข้าสู่ระบบ YouTube แล้ว กำลังลองใหม่…',
+    youtubeSignInCancelled: 'ยังไม่ได้เข้าสู่ระบบ YouTube',
+    youtubeSignOut: 'ออกจากระบบ YouTube', youtubeSignOutTitle: 'ลบคุกกี้ YouTube ที่แอปใช้ดาวน์โหลด',
+    youtubeSignedOut: 'ออกจากระบบ YouTube แล้ว',
+    previewLoading: 'กำลังดูข้อมูลลิงก์…', previewFailed: 'ดูตัวอย่างลิงก์นี้ไม่ได้ แต่ยังลองดาวน์โหลดได้',
+    playlistCount: 'เพลย์ลิสต์ {n} รายการ', maxQuality: 'สูงสุด {q}',
+    trimLabel: 'ตัดเฉพาะช่วง', trimStart: 'เวลาเริ่ม', trimEnd: 'เวลาจบ', trimHint: 'ใส่เวลาเป็น นาที:วินาที เช่น 1:20',
+    trimEndRequired: 'ใส่เวลาจบของช่วงที่ต้องการ',
+    history: 'ประวัติ', historyTitle: 'ประวัติการดาวน์โหลด', historyEmpty: 'ยังไม่มีประวัติ ไฟล์ที่ดาวน์โหลดเสร็จจะแสดงที่นี่',
+    historyClear: 'ล้างประวัติ', reuse: 'ใช้ลิงก์นี้', fileMissing: 'ไม่พบไฟล์นี้แล้ว อาจถูกย้ายหรือลบ', close: 'ปิด',
+    warpGot: 'ดาวน์โหลดเสร็จแล้ว',
+  },
+  en: {
+    appTitle: 'Video Downloader', checking: 'Checking tools…', notInstalled: 'Tools not installed', ready: 'Ready', missing: 'Missing',
+    setupTitle: 'Set up for first use', setupDescription: 'Install the required tools once, then start downloading.',
+    setupNote: 'Downloaded from the official yt-dlp GitHub releases',
+    ytdlpDescription: 'Downloader · ~18 MB', ffmpegDescription: 'Video and audio conversion · ~150 MB',
+    headline: 'Paste a link and choose a format', subhead: 'Works with YouTube, TikTok, Facebook, X and many more sites',
+    urlLabel: 'Video link', urlPlaceholder: 'Paste a video link, e.g. https://youtu.be/…', paste: 'Paste', clear: 'Clear link',
+    format: 'Format', video: 'Video', audioOnly: 'Audio',
+    resolution: 'Resolution', best: 'Best', available: 'available', smallFile: 'Smaller',
+    videoHint: 'Selects the clearest source at your chosen resolution, then converts to your chosen format',
+    audioFormat: 'Audio format', smallPlay: 'Plays anywhere', lossless: 'Lossless', uncompressed: 'Uncompressed',
+    outputLabel: 'Video output',
+    h264Tag: 'Edit-ready', h264Desc: 'Opens in Premiere, Resolve, CapCut and every player',
+    hevcTag: 'High quality', hevcDesc: 'Preserves picture detail for modern apps',
+    originalTitle: 'Original', originalTag: 'Fastest', originalDesc: 'No conversion, original quality (AV1/VP9)',
+    saveTo: 'Save to', choose: 'Change', open: 'Open folder',
+    encoderLabel: 'Video encoder', auto: 'Automatic', recommended: 'Recommended',
+    encoderAutoDesc: 'Picks the fastest GPU in this PC', autoUsing: 'Using ',
+    encoderNvidiaDesc: 'NVIDIA GeForce / RTX graphics', encoderIntelDesc: 'Intel integrated graphics or Arc',
+    encoderAmdDesc: 'AMD integrated graphics or Radeon', encoderAppleDesc: 'Apple Silicon or Intel Mac', encoderHybridDesc: 'Split work between the CPU and GPU',
+    hybrid: 'CPU decode + GPU encode', hybridBadge: 'Hybrid', encoderCpuDesc: 'x264 / x265, works on any PC',
+    detected: 'Detected', notDetected: 'Not found',
+    playlist: 'Download entire playlist',
+    start: 'Download', cancel: 'Cancel', update: 'Update yt-dlp', updateTitle: 'Update yt-dlp to the latest version',
+    install: 'Install tools', installRequired: 'Install yt-dlp and FFmpeg before downloading',
+    manualInstall: 'Install from package manager', installing: 'Installing…', extracting: 'Extracting…',
+    installSuccess: 'Installation complete', installFailed: 'Installation failed: ',
+    updating: 'Updating…', updated: 'yt-dlp updated', updateFailed: 'Update failed: ',
+    appUpdateReady: 'Restart to update', appUpdateAvailable: 'New version', appUpdateTitle: 'StarPort v{version} is available',
+    appUpdateBusy: 'Wait for the download to finish, then restart to update',
+    clipboardFailed: 'Cannot read the clipboard. Paste with Ctrl+V.',
+    urlRequired: 'Paste a video link first', urlInvalid: 'Links must start with http:// or https://',
+    downloading: 'Working…', starting: 'Starting…', preparing: 'Preparing download',
+    finished: 'Complete', savedOne: 'File saved', savedMany: '{n} files saved', andMore: ' and {n} more',
+    cancelled: 'Cancelled', failed: 'Download failed', failedHint: 'Check the link, or update yt-dlp and try again.',
+    remaining: 'ETA ', item: 'Item ', switchLanguage: 'Switch language', folderMissing: 'This folder no longer exists',
+    languageNotice: 'Default language follows your device language and time zone.',
+    toggleTheme: 'Toggle light/dark theme', details: 'Activity details', showInFolder: 'Show in folder',
+    trustLocal: 'Runs on your PC, no account needed', trustTools: 'Built on open-source yt-dlp and FFmpeg',
+    trustFiles: 'Files save straight to the folder you choose',
+    botCheck: 'YouTube wants to confirm you are not a bot. Sign in to YouTube in the app once and the download will retry.',
+    botCheckSignedIn: 'YouTube still wants to confirm you are not a bot. Try signing in to YouTube again.',
+    youtubeSignIn: 'Sign in to YouTube', youtubeSignedIn: 'Signed in to YouTube. Retrying…',
+    youtubeSignInCancelled: 'Not signed in to YouTube',
+    youtubeSignOut: 'Sign out of YouTube', youtubeSignOutTitle: 'Remove the YouTube cookies used for downloads',
+    youtubeSignedOut: 'Signed out of YouTube',
+    previewLoading: 'Reading link…', previewFailed: "Couldn't preview this link. You can still try downloading it.",
+    playlistCount: 'Playlist, {n} items', maxQuality: 'Up to {q}',
+    trimLabel: 'Download a section', trimStart: 'Start time', trimEnd: 'End time', trimHint: 'Use minutes:seconds, like 1:20',
+    trimEndRequired: 'Enter where the section ends',
+    history: 'History', historyTitle: 'Download history', historyEmpty: 'Nothing here yet. Finished downloads show up here.',
+    historyClear: 'Clear history', reuse: 'Use link', fileMissing: 'This file is gone. It may have been moved or deleted.', close: 'Close',
+    warpGot: 'Download complete',
+  },
+};
+
+const savedLanguage = store.get('language');
+// แอปใช้ภาษาของเครื่องเป็นค่าเริ่มต้น ไม่ส่ง IP ไปตรวจประเทศเหมือนหน้าเว็บ
+let lang = savedLanguage === 'th' || savedLanguage === 'en' ? savedLanguage : window.framePortLanguage.fallback();
+let theme = store.get('theme') ||
+  (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+let folder = store.get('folder');
+let toolStatus = {};
+let detected = null;
+let lastFiles = [];
+let running = false;
+
+const tr = (key, vars = {}) =>
+  (words[lang][key] ?? words.th[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+const cleanError = (error) => String(error?.message || error)
+  .replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+
+// ---------- theme + language ----------
+
+function applyTheme() {
+  document.documentElement.dataset.theme = theme;
+  $('themeBtn').setAttribute('aria-pressed', String(theme === 'dark'));
+  $('themeBtn').setAttribute('aria-label', tr('toggleTheme'));
+  $('themeBtn').title = tr('toggleTheme');
+  api.setTheme(theme).catch(() => {});
+}
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = tr(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = tr(el.dataset.i18nPlaceholder);
+  for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = tr(el.dataset.i18nTitle);
+  for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', tr(el.dataset.i18nAria));
+  $('langBtn').textContent = lang === 'th' ? 'EN' : 'ไทย';
+  $('langBtn').setAttribute('aria-label', tr('switchLanguage'));
+  if (running) $('goText').textContent = tr('downloading');
+  applyTheme();
+  renderAppUpdate();
+  renderDetected();
+  syncEncoderMenu();
+  renderStatus();
+}
+
+$('langBtn').onclick = () => {
+  lang = lang === 'th' ? 'en' : 'th';
+  store.set('language', lang);
+  applyLanguage();
+  renderPreview();
+  renderHistory();
+};
+
+$('themeBtn').onclick = () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  store.set('theme', theme);
+  applyTheme();
+};
+
+// ---------- encoder menu ----------
+
+// macOS มีแค่ VideoToolbox ส่วน Windows/Linux ไม่มี VideoToolbox จึงซ่อนตัวเลือกที่ใช้ไม่ได้
+const encoderHidden = api.platform === 'darwin' ? ['nvenc', 'qsv', 'amf', 'hybrid'] : ['vt'];
+for (const value of encoderHidden) {
+  document.querySelector(`.encoder-option[data-value="${value}"]`).remove();
+  document.querySelector(`#encoder option[value="${value}"]`).remove();
+}
+const encoderOptions = [...document.querySelectorAll('.encoder-option')];
+const encoderNames = { nvenc: 'NVIDIA NVENC', qsv: 'Intel Quick Sync', amf: 'AMD AMF', vt: 'Apple VideoToolbox' };
+
+function renderDetected() {
+  for (const badge of document.querySelectorAll('[data-detect]')) {
+    if (!detected) continue;
+    const found = !!detected[badge.dataset.detect];
+    badge.textContent = tr(found ? 'detected' : 'notDetected');
+    badge.classList.toggle('found', found);
+  }
+}
+
+function syncEncoderMenu() {
+  const selected = encoderOptions.find((option) => option.dataset.value === $('encoder').value) || encoderOptions[0];
+  $('encoderValue').textContent = selected.querySelector('.encoder-option-title').textContent;
+  let description = selected.querySelector('.encoder-option-description').textContent;
+  if (selected.dataset.value === 'auto' && detected) {
+    const best = ['nvenc', 'qsv', 'amf', 'vt'].find((id) => detected[id]);
+    description = tr('autoUsing') + (best ? encoderNames[best] : 'CPU');
+  }
+  $('encoderDescription').textContent = description;
+  for (const option of encoderOptions) option.setAttribute('aria-selected', String(option === selected));
+}
+
+function closeEncoderMenu(returnFocus = false) {
+  $('encoderMenu').classList.add('hidden');
+  $('encoderRow').classList.remove('open');
+  $('encoderTrigger').setAttribute('aria-expanded', 'false');
+  if (returnFocus) $('encoderTrigger').focus();
+}
+
+function openEncoderMenu() {
+  $('encoderMenu').classList.remove('hidden');
+  $('encoderRow').classList.add('open');
+  $('encoderTrigger').setAttribute('aria-expanded', 'true');
+  (encoderOptions.find((option) => option.dataset.value === $('encoder').value) || encoderOptions[0]).focus();
+}
+
+function chooseEncoder(option) {
+  $('encoder').value = option.dataset.value;
+  store.set('encoder', option.dataset.value);
+  syncEncoderMenu();
+  closeEncoderMenu(true);
+}
+
+$('encoderTrigger').addEventListener('click', () => {
+  if ($('encoderMenu').classList.contains('hidden')) openEncoderMenu();
+  else closeEncoderMenu();
+});
+
+$('encoderTrigger').addEventListener('keydown', (event) => {
+  if (!['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) return;
+  event.preventDefault();
+  openEncoderMenu();
+});
+
+for (const option of encoderOptions) {
+  option.addEventListener('click', () => chooseEncoder(option));
+  option.addEventListener('keydown', (event) => {
+    const index = encoderOptions.indexOf(option);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeEncoderMenu(true);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      chooseEncoder(option);
+    } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? encoderOptions.length - 1 :
+        Math.max(0, Math.min(encoderOptions.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
+      encoderOptions[next].focus();
+    } else if (event.key === 'Tab') {
+      closeEncoderMenu(true);
+    }
+  });
+}
+
+document.addEventListener('pointerdown', (event) => {
+  if (!$('encoderRow').contains(event.target)) closeEncoderMenu();
+});
+
+// ---------- app update ----------
+
+let appUpdate = null;
+
+function renderAppUpdate() {
+  const show = appUpdate?.state === 'ready' || appUpdate?.state === 'available';
+  $('appUpdateBtn').classList.toggle('hidden', !show);
+  if (!show) return;
+  $('appUpdateBtn').textContent = tr(appUpdate.state === 'ready' ? 'appUpdateReady' : 'appUpdateAvailable');
+  $('appUpdateBtn').title = tr('appUpdateTitle', { version: appUpdate.version });
+}
+
+api.onAppUpdate((update) => { appUpdate = update; renderAppUpdate(); });
+api.appUpdateState().then((update) => { appUpdate = update; renderAppUpdate(); }).catch(() => {});
+
+$('appUpdateBtn').onclick = () => {
+  if (running && appUpdate?.state === 'ready') return toast(tr('appUpdateBusy'));
+  api.installAppUpdate().catch(() => {});
+};
+
+// ---------- feedback ----------
+
+function toast(message) {
+  $('toast').textContent = message;
+  $('toast').classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => $('toast').classList.remove('show'), 2800);
+}
+
+const pendingLogs = [];
+let logFrame = 0;
+function log(line, cls) {
+  pendingLogs.push([line, cls]);
+  if (logFrame) return;
+  logFrame = requestAnimationFrame(() => {
+    const el = $('log');
+    el.classList.remove('hidden');
+    const fragment = document.createDocumentFragment();
+    for (const [text, type] of pendingLogs.splice(0)) {
+      const row = document.createElement('div');
+      row.className = type || (/ERROR|error:/i.test(text) ? 'err' : '');
+      row.textContent = text;
+      fragment.appendChild(row);
+    }
+    el.appendChild(fragment);
+    while (el.childElementCount > 300) el.firstElementChild.remove();
+    el.scrollTop = el.scrollHeight;
+    logFrame = 0;
+  });
+}
+api.onLog((line) => log(line));
+
+// ---------- tools ----------
+
+function setTool(id, ok, message) {
+  const tool = $(id);
+  tool.classList.toggle('done', ok);
+  tool.querySelector('.tool-state').textContent = message ?? (ok ? '✓ ' + tr('ready') : tr('missing'));
+}
+
+function renderStatus() {
+  const ready = !!(toolStatus.version && toolStatus.ffmpeg);
+  const checked = 'version' in toolStatus;
+  $('dot').className = 'dot ' + (!checked ? '' : ready ? 'ok' : 'err');
+  $('ver').textContent = !checked ? tr('checking') : toolStatus.version
+    ? `${ready ? tr('ready') : tr('missing') + ' FFmpeg'} · yt-dlp ${toolStatus.version}`
+    : tr('notInstalled');
+  if (toolStatus.appVersion) $('appVersion').textContent = 'v' + toolStatus.appVersion;
+  $('updateBtn').classList.toggle('hidden', !toolStatus.version);
+  $('youtubeOutBtn').classList.toggle('hidden', !toolStatus.youtubeSignedIn);
+  $('youtubeOutBtn').disabled = running;
+  $('setup').classList.toggle('hidden', !checked || ready);
+  $('main').classList.remove('hidden');
+  $('goBtn').disabled = !ready || running;
+  $('goBtn').title = ready ? '' : tr('installRequired');
+  setTool('t-ytdlp', !!toolStatus.version);
+  setTool('t-ffmpeg', !!toolStatus.ffmpeg,
+    !toolStatus.ffmpeg && toolStatus.canInstallFfmpeg === false ? tr('manualInstall') : undefined);
+}
+
+function setFolder(value) {
+  folder = value;
+  $('folder').textContent = value;
+  $('folder').title = value;
+}
+
+async function refresh() {
+  toolStatus = await api.status();
+  if (!folder) setFolder(toolStatus.downloads);
+  renderStatus();
+  if (toolStatus.ffmpeg && !detected) {
+    detected = await api.encoders().catch(() => ({}));
+    renderDetected();
+    syncEncoderMenu();
+  }
+}
+
+api.onInstallProgress(({ tag, pct, extracting }) => {
+  const tool = $('t-' + tag);
+  tool.querySelector('.fill').style.transform = `scaleX(${pct / 100})`;
+  tool.querySelector('.tool-state').textContent = extracting ? tr('extracting') : pct.toFixed(0) + '%';
+});
+
+async function install(tag, fn) {
+  const tool = $('t-' + tag);
+  tool.classList.add('busy', 'running');
+  try {
+    await fn();
+  } finally {
+    tool.classList.remove('busy', 'running');
+  }
+}
+
+$('installBtn').onclick = async () => {
+  const button = $('installBtn');
+  const label = button.querySelector('span');
+  const taskLanguage = lang;
+  button.disabled = true;
+  label.textContent = tr('installing');
+  try {
+    if (!toolStatus.version) await install('ytdlp', () => api.installYtdlp(taskLanguage));
+    if (!toolStatus.ffmpeg) await install('ffmpeg', () => api.installFfmpeg(taskLanguage));
+    toast(tr('installSuccess'));
+  } catch (error) {
+    toast(tr('installFailed') + cleanError(error));
+  } finally {
+    await refresh().catch(() => {});
+    button.disabled = false;
+    label.textContent = tr('install');
+  }
+};
+
+$('updateBtn').onclick = async () => {
+  const button = $('updateBtn');
+  const label = button.querySelector('.label-text');
+  button.disabled = true;
+  button.classList.add('spin');
+  label.textContent = tr('updating');
+  try {
+    log(await api.updateYtdlp(lang));
+    await refresh();
+    toast(tr('updated'));
+  } catch (error) {
+    toast(tr('updateFailed') + cleanError(error));
+  } finally {
+    button.disabled = false;
+    button.classList.remove('spin');
+    label.textContent = tr('update');
+  }
+};
+
+// ---------- options (remembered between sessions) ----------
+
+function syncKind() {
+  const audio = picked('kind') === 'audio';
+  $('videoOpts').classList.toggle('hidden', audio);
+  $('audioOpts').classList.toggle('hidden', !audio);
+  $('outputOpts').classList.toggle('hidden', audio);
+  $('encoderRow').classList.toggle('hidden', audio || picked('out') === 'original');
+}
+
+for (const name of ['kind', 'vq', 'aq', 'out']) {
+  const saved = store.get('opt-' + name);
+  const input = saved && document.querySelector(`input[name=${name}][value="${CSS.escape(saved)}"]`);
+  if (input) input.checked = true;
+  document.querySelectorAll(`input[name=${name}]`).forEach((radio) => radio.addEventListener('change', () => {
+    store.set('opt-' + name, radio.value);
+    syncKind();
+  }));
+}
+const savedEncoder = store.get('encoder');
+if (encoderOptions.some((option) => option.dataset.value === savedEncoder)) $('encoder').value = savedEncoder;
+$('playlist').checked = store.get('playlist') === '1';
+$('playlist').addEventListener('change', () => store.set('playlist', $('playlist').checked ? '1' : '0'));
+syncKind();
+
+// ---------- link field ----------
+
+function setUrl(value) {
+  $('url').value = value.trim();
+  $('clearBtn').classList.toggle('hidden', !$('url').value);
+  showUrlError('');
+  requestPreview();
+}
+
+function showUrlError(message) {
+  $('urlError').textContent = message;
+  $('urlError').classList.toggle('hidden', !message);
+  $('urlField').classList.remove('invalid');
+  if (message) requestAnimationFrame(() => $('urlField').classList.add('invalid'));
+}
+
+$('url').addEventListener('input', () => setUrl($('url').value));
+$('url').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !$('goBtn').disabled) $('goBtn').click();
+});
+$('clearBtn').onclick = () => { setUrl(''); $('url').focus(); };
+
+$('pasteBtn').onclick = async () => {
+  try {
+    setUrl(await navigator.clipboard.readText());
+    $('url').focus();
+  } catch {
+    toast(tr('clipboardFailed'));
+  }
+};
+
+// วางลิงก์ได้จากทุกที่ในหน้าต่าง และลากลิงก์มาวางได้
+document.addEventListener('paste', (event) => {
+  if (event.target instanceof HTMLInputElement) return;
+  const text = event.clipboardData?.getData('text') || '';
+  if (!text.trim()) return;
+  event.preventDefault();
+  setUrl(text);
+  $('url').focus();
+});
+document.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  document.body.classList.add('dragging');
+});
+document.addEventListener('dragleave', (event) => {
+  if (!event.relatedTarget) document.body.classList.remove('dragging');
+});
+document.addEventListener('drop', (event) => {
+  event.preventDefault();
+  document.body.classList.remove('dragging');
+  const text = event.dataTransfer?.getData('text/uri-list') || event.dataTransfer?.getData('text') || '';
+  const link = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
+  if (link) setUrl(link);
+});
+
+$('pickBtn').onclick = async () => {
+  const selected = await api.pickFolder();
+  if (!selected) return;
+  setFolder(selected);
+  store.set('folder', selected);
+};
+
+$('openBtn').onclick = async () => {
+  if (await api.openFolder(folder) === 'not-found') toast(tr('folderMissing'));
+};
+
+// ---------- progress ----------
+
+function resetJobs() {
+  $('phase').textContent = '';
+  $('fill').style.width = '0%';
+  $('pct').textContent = '0%';
+  $('speed').textContent = '';
+  $('eta').textContent = '';
+  $('progress').classList.add('hidden');
+  $('progress').classList.remove('show');
+  $('result').classList.add('hidden');
+}
+
+function setJob(stage, { pct = 0, speed, eta, label, item, name }) {
+  $('progress').classList.remove('hidden');
+  $('progress').classList.add('show');
+  $('phase').textContent = [label, name, item ? tr('item') + item : ''].filter(Boolean).join(' · ');
+  $('fill').style.width = `${Math.min(Math.max(pct, 0), 100)}%`;
+  $('pct').textContent = pct > 0 ? pct.toFixed(1) + '%' : '';
+  const known = (value) => value && !/^(Unknown|NA|N\/A)$/i.test(value);
+  $('speed').textContent = known(speed) ? speed : '';
+  $('eta').textContent = known(eta) ? tr('remaining') + eta : '';
+}
+
+function finishJobs(ok, cancelled = false) {
+  $('phase').textContent = tr(ok ? 'finished' : cancelled ? 'cancelled' : 'failed');
+  if (ok) { $('fill').style.width = '100%'; $('pct').textContent = '100%'; }
+  $('speed').textContent = $('eta').textContent = '';
+}
+
+function showResult(type, title, detail) {
+  const result = $('result');
+  result.classList.remove('hidden', 'error');
+  result.classList.toggle('error', type === 'error');
+  $('resultSvg').innerHTML = type === 'error' ? '<path d="M12 7v6M12 16.5v.5"/>' : '<path d="m5 12.5 4.5 4.5L19 7.5"/>';
+  $('resultTitle').textContent = title;
+  $('resultDetail').textContent = detail;
+  $('showBtn').classList.toggle('hidden', type !== 'ok' || !lastFiles.length);
+  $('youtubeInBtn').classList.add('hidden');
+  // เริ่มอนิเมชันใหม่ทุกครั้ง
+  result.style.animation = 'none';
+  void result.offsetWidth;
+  result.style.animation = '';
+  result.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+api.onProgress((data) => setJob(data.stage || 'download', data));
+
+$('showBtn').onclick = () => api.showFile(lastFiles[lastFiles.length - 1]);
+
+function setRunning(value) {
+  running = value;
+  $('goBtn').classList.toggle('working', value);
+  $('goText').textContent = tr(value ? 'downloading' : 'start');
+  $('cancelBtn').classList.toggle('hidden', !value);
+  $('cancelBtn').disabled = false;
+  renderStatus();
+}
+
+$('goBtn').onclick = async () => {
+  const url = $('url').value.trim();
+  if (!url) return showUrlError(tr('urlRequired'));
+  if (!/^https?:\/\/\S+$/i.test(url)) return showUrlError(tr('urlInvalid'));
+  showUrlError('');
+  let section;
+  try {
+    section = trimSection();
+  } catch (error) {
+    return toast(error.message);
+  }
+
+  const taskLanguage = lang;
+  setRunning(true);
+  resetJobs();
+  $('progress').classList.remove('hidden');
+  $('progress').classList.add('show');
+  requestAnimationFrame(() => $('progress').scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+  setJob('download', { label: tr('preparing') });
+  $('log').replaceChildren();
+
+  const kind = picked('kind');
+  const quality = kind === 'audio' ? picked('aq') : picked('vq');
+  try {
+    const { code, files, error } = await api.download({
+      url, kind, quality, folder, playlist: $('playlist').checked, section,
+      encoder: $('encoder').value, output: picked('out'), language: taskLanguage,
+    });
+    lastFiles = files || [];
+    const names = lastFiles.map((file) => file.split(/[\\/]/).pop());
+    if (code === 0) {
+      finishJobs(true);
+      const more = names.length > 1 ? tr('andMore', { n: names.length - 1 }) : '';
+      showResult('ok', names.length > 1 ? tr('savedMany', { n: names.length }) : tr('savedOne'), (names[0] || '') + more);
+      log(tr('finished'), 'ok');
+      const title = (previewKey.startsWith(url + '|') && preview?.title) || names[0] || url;
+      addHistory({ title, url, files: lastFiles, kind, at: Date.now() });
+      warp(title);
+    } else if (code === -1) {
+      finishJobs(false, true);
+      showResult('error', tr('cancelled'), '');
+    } else {
+      finishJobs(false);
+      if (/Sign in to confirm|--cookies-from-browser/.test(error)) {
+        // IP ถูก YouTube สงสัยว่าเป็นบอท แก้ได้ด้วยการเข้าสู่ระบบ YouTube ให้ yt-dlp ใช้คุกกี้
+        showResult('error', tr('failed'), tr(toolStatus.youtubeSignedIn ? 'botCheckSignedIn' : 'botCheck'));
+        $('youtubeInBtn').classList.remove('hidden');
+      } else {
+        // 403 จาก YouTube ส่วนใหญ่แก้ได้ด้วยการอัปเดต yt-dlp จึงบอกวิธีแก้ต่อท้าย
+        showResult('error', tr('failed'), !error ? tr('failedHint') : /HTTP Error 403/.test(error) ? `${error} — ${tr('failedHint')}` : error);
+      }
+    }
+  } catch (error) {
+    finishJobs(false);
+    showResult('error', tr('failed'), cleanError(error));
+    log(cleanError(error), 'err');
+  } finally {
+    setRunning(false);
+  }
+};
+
+$('youtubeInBtn').onclick = async () => {
+  const button = $('youtubeInBtn');
+  button.disabled = true;
+  try {
+    const signedIn = await api.youtubeSignIn(lang);
+    if (signedIn === null) return;
+    await refresh().catch(() => {});
+    if (!signedIn) return toast(tr('youtubeSignInCancelled'));
+    toast(tr('youtubeSignedIn'));
+    $('goBtn').click();
+  } catch (error) {
+    toast(cleanError(error));
+  } finally {
+    button.disabled = false;
+  }
+};
+
+$('youtubeOutBtn').onclick = async () => {
+  try {
+    await api.youtubeSignOut(lang);
+    toast(tr('youtubeSignedOut'));
+  } catch (error) {
+    toast(cleanError(error));
+  }
+  await refresh().catch(() => {});
+};
+
+$('cancelBtn').onclick = () => {
+  $('cancelBtn').disabled = true;
+  api.cancel();
+};
+
+// ---------- link preview ----------
+
+const clock = (secs) => {
+  const s = Math.round(secs);
+  const h = Math.floor(s / 3600);
+  const mm = Math.floor(s / 60) % 60;
+  const ss = String(s % 60).padStart(2, '0');
+  return h ? `${h}:${String(mm).padStart(2, '0')}:${ss}` : `${mm}:${ss}`;
+};
+const qualityName = (height) => height >= 2160 ? '4K' : height >= 1440 ? '2K' : `${height}p`;
+let preview = null;
+let previewState = '';
+let previewKey = '';
+let previewTimer = 0;
+
+function renderPreview() {
+  const card = $('preview');
+  card.classList.toggle('hidden', !previewState);
+  card.classList.toggle('loading', previewState === 'loading');
+  card.classList.toggle('failed', previewState === 'failed');
+  const info = previewState === 'ready' ? preview : null;
+  $('previewTitle').textContent = info ? info.title : previewState ? tr(previewState === 'loading' ? 'previewLoading' : 'previewFailed') : '';
+  $('previewMeta').textContent = info ? [info.uploader, info.count ? tr('playlistCount', { n: info.count }) : info.duration ? clock(info.duration) : '']
+    .filter(Boolean).join(' · ') : '';
+  $('previewBadge').textContent = info?.maxHeight ? tr('maxQuality', { q: qualityName(info.maxHeight) }) : '';
+  if (info?.thumbnail) $('previewImg').src = info.thumbnail;
+  else $('previewImg').removeAttribute('src');
+  // ความละเอียดที่ลิงก์นี้ไม่มีจะจางลง (ยังเลือกได้ yt-dlp จะใช้ระดับที่ใกล้ที่สุด)
+  for (const input of document.querySelectorAll('input[name=vq]')) {
+    const height = Number(input.value);
+    input.nextElementSibling.classList.toggle('unavailable', !!(info?.maxHeight && height > info.maxHeight));
+  }
+  $('trimEnd').placeholder = info?.duration ? clock(info.duration) : '1:00';
+}
+
+function requestPreview() {
+  clearTimeout(previewTimer);
+  const url = $('url').value.trim();
+  const key = `${url}|${$('playlist').checked}`;
+  if (!/^https?:\/\/\S+$/i.test(url) || !toolStatus.version) {
+    previewKey = '';
+    preview = null;
+    previewState = '';
+    return renderPreview();
+  }
+  if (key === previewKey) return;
+  previewTimer = setTimeout(async () => {
+    previewKey = key;
+    preview = null;
+    previewState = 'loading';
+    renderPreview();
+    const info = await api.preview({ url, playlist: $('playlist').checked, language: lang }).catch(() => null);
+    if (previewKey !== key) return; // ลิงก์เปลี่ยนระหว่างรอ
+    preview = info;
+    previewState = info ? 'ready' : 'failed';
+    renderPreview();
+  }, 500);
+}
+
+$('playlist').addEventListener('change', () => { syncTrim(); requestPreview(); });
+
+// ---------- clip trim ----------
+
+function syncTrim() {
+  // ตัดช่วงใช้กับวิดีโอเดียว ไม่ใช้กับเพลย์ลิสต์
+  $('trimRow').classList.toggle('hidden', $('playlist').checked);
+  $('trimFields').classList.toggle('hidden', !$('trim').checked);
+}
+$('trim').addEventListener('change', () => {
+  syncTrim();
+  if ($('trim').checked) $('trimStart').focus();
+});
+syncTrim();
+
+// คืน { start, end } ให้ main ตรวจรูปแบบเวลา หรือ null ถ้าไม่ได้ตัดช่วง ถ้าไม่ใส่เวลาจบจะใช้ความยาววิดีโอจากตัวอย่าง
+function trimSection() {
+  if (!$('trim').checked || $('playlist').checked) return null;
+  const end = $('trimEnd').value.trim() || (preview?.duration ? clock(preview.duration) : '');
+  if (!end) throw new Error(tr('trimEndRequired'));
+  return { start: $('trimStart').value.trim() || '0', end };
+}
+
+// ---------- history ----------
+
+const HISTORY_MAX = 50;
+function loadHistory() {
+  try {
+    const list = JSON.parse(store.get('history'));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function addHistory(entry) {
+  store.set('history', JSON.stringify([entry, ...loadHistory()].slice(0, HISTORY_MAX)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = $('historyList');
+  const items = loadHistory();
+  list.replaceChildren();
+  $('historyClear').classList.toggle('hidden', !items.length);
+  if (!items.length) {
+    const empty = document.createElement('li');
+    empty.className = 'history-empty';
+    empty.textContent = tr('historyEmpty');
+    return list.append(empty);
+  }
+  const date = new Intl.DateTimeFormat(lang === 'th' ? 'th-TH' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  for (const item of items) {
+    const row = document.createElement('li');
+    row.className = 'history-item';
+    const title = document.createElement('div');
+    title.className = 'history-title';
+    title.textContent = item.title || item.files?.[0]?.split(/[\\/]/).pop() || item.url;
+    const meta = document.createElement('div');
+    meta.className = 'history-meta';
+    const count = item.files?.length > 1 ? tr('savedMany', { n: item.files.length }) : '';
+    meta.textContent = [date.format(item.at), count].filter(Boolean).join(' · ');
+    const actions = document.createElement('div');
+    actions.className = 'history-actions';
+    const show = document.createElement('button');
+    show.className = 'compact-button';
+    show.type = 'button';
+    show.textContent = tr('showInFolder');
+    show.onclick = async () => { if (!await api.showFile(item.files?.[0])) toast(tr('fileMissing')); };
+    const reuse = document.createElement('button');
+    reuse.className = 'compact-button';
+    reuse.type = 'button';
+    reuse.textContent = tr('reuse');
+    reuse.onclick = () => { closeHistory(); setUrl(item.url); requestPreview(); $('url').focus(); };
+    actions.append(show, reuse);
+    row.append(title, meta, actions);
+    list.append(row);
+  }
+}
+
+function openHistory() {
+  renderHistory();
+  $('history').classList.remove('hidden');
+  $('historyBackdrop').classList.remove('hidden');
+  $('historyClose').focus();
+}
+function closeHistory() {
+  if ($('history').classList.contains('hidden')) return;
+  $('history').classList.add('hidden');
+  $('historyBackdrop').classList.add('hidden');
+  $('historyBtn').focus();
+}
+$('historyBtn').onclick = openHistory;
+$('historyClose').onclick = closeHistory;
+$('historyBackdrop').onclick = closeHistory;
+$('historyClear').onclick = () => { store.set('history', '[]'); renderHistory(); };
+
+// ---------- warp finish ----------
+
+function warp(title) {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const el = $('warp');
+  $('warpTitle').textContent = title;
+  el.classList.remove('hidden', 'play');
+  void el.offsetWidth;
+  el.classList.add('play');
+  clearTimeout(warp.timer);
+  warp.timer = setTimeout(() => el.classList.add('hidden'), 3200);
+}
+$('warp').onclick = () => $('warp').classList.add('hidden');
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  $('warp').classList.add('hidden');
+  closeHistory();
+});
+
+// ---------- start ----------
+
+if (folder) setFolder(folder);
+applyLanguage();
+refresh().catch((error) => {
+  toolStatus = { version: null, ffmpeg: false };
+  renderStatus();
+  $('ver').textContent = cleanError(error);
+});

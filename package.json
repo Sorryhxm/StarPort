@@ -1,0 +1,125 @@
+{
+  "name": "starport",
+  "productName": "StarPort",
+  "version": "1.0.8",
+  "description": "StarPort: reliable video downloads and edit-ready conversion",
+  "author": "StarPort",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icon": "electron build/make-icon.js",
+    "dist": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "test:language": "node test-language.js",
+    "test:updater": "node test-updater.js",
+    "test:download-path": "node test-download-path.js",
+    "test:checksum": "node test-checksum.js",
+    "test:clip": "node test-clip.js",
+    "test:download-quality": "electron test-download-quality.js",
+    "test:startup": "electron test-startup.js",
+    "test:youtube-pot": "electron test-youtube-pot.js"
+  },
+  "build": {
+    "appId": "com.starport.app",
+    "productName": "StarPort",
+    "electronLanguages": [
+      "en-US",
+      "th"
+    ],
+    "files": [
+      "main.js",
+      "ytdlp-updater.js",
+      "app-updater.js",
+      "download-path.js",
+      "checksum.js",
+      "clip.js",
+      "youtube-pot.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "docs/language.js",
+      "fonts/*.woff2",
+      "fonts/OFL.txt",
+      "build/icon.svg"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/yt-dlp-plugins",
+        "to": "yt-dlp-plugins"
+      },
+      {
+        "from": "vendor/licenses",
+        "to": "licenses"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.video",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "artifactName": "StarPort-mac-${arch}.${ext}"
+    },
+    "afterPack": "build/list-installed-files.js",
+    "nsis": {
+      "include": "build/installer.nsh",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "StarPort-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "StarPort.${ext}"
+    },
+    "compression": "maximum"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}
