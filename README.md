@@ -6,7 +6,7 @@
 
 **Paste a link. Get the file. Look good doing it.**
 
-A video and audio downloader for Windows with a Honkai: Star Rail-inspired interface.
+A video and audio downloader for Windows.
 
 [![Latest release](https://img.shields.io/github/v/release/Sorryhxm/StarPort?style=flat-square&color=e6c47f&label=release)](https://github.com/Sorryhxm/StarPort/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Sorryhxm/StarPort/total?style=flat-square&color=2b2f6e)](https://github.com/Sorryhxm/StarPort/releases)
@@ -81,15 +81,14 @@ StarPort is built on the download engine of [FramePort](https://github.com/Candy
 and runs on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.org/). Bundled components keep
 their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Only download what you have the right to use. Honkai: Star Rail belongs to HoYoverse; StarPort is an unofficial
-fan project and isn't affiliated with or endorsed by them.
+Only download what you have the right to use.
 
 ---
 
 <details>
 <summary><h2 id="ภาษาไทย">ภาษาไทย</h2></summary>
 
-**วางลิงก์ ได้ไฟล์ ในหน้าตาสไตล์ Honkai: Star Rail**
+**วางลิงก์ ได้ไฟล์ สวยตั้งแต่เปิดแอป**
 
 StarPort เป็นโปรแกรมดาวน์โหลดวิดีโอและเสียงสำหรับ Windows ที่ให้คุณเห็นก่อนว่าจะได้อะไร แล้วค่อยกดดาวน์โหลด
 
@@ -114,6 +113,6 @@ StarPort เป็นโปรแกรมดาวน์โหลดวิด�
 ถ้า YouTube ขอให้ยืนยันว่าไม่ใช่บอท แอปจะลองใหม่ให้เองก่อน ถ้ายังไม่ผ่าน กด **เข้าสู่ระบบ YouTube** ในแอปหนึ่งครั้ง
 คุกกี้เก็บไว้ในเครื่องคุณเท่านั้น
 
-ดาวน์โหลดเฉพาะเนื้อหาที่คุณมีสิทธิ์ใช้ StarPort เป็นโปรเจกต์ของแฟน ไม่ได้เกี่ยวข้องกับ HoYoverse
+ดาวน์โหลดเฉพาะเนื้อหาที่คุณมีสิทธิ์ใช้
 
 </details>
