@@ -114,7 +114,14 @@
     "portable": {
       "artifactName": "StarPort.${ext}"
     },
-    "compression": "maximum"
+    "compression": "maximum",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Sorryhxm",
+        "repo": "StarPort"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "^44.9.0",

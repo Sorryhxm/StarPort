@@ -19,8 +19,10 @@ npm run dist
 npm run dist:mac
 ```
 
-Auto-update is off. To turn it on, set `RELEASES_REPO` in `app-updater.js` and add a matching `build.publish`
-entry in `package.json`.
+Installed copies update themselves from [GitHub Releases](https://github.com/Sorryhxm/StarPort/releases).
+To publish a release, bump `version` in `package.json`, run `npm run dist`, and upload
+`dist/StarPort-Setup.exe`, `dist/StarPort-Setup.exe.blockmap`, `dist/latest.yml` and `dist/StarPort.exe` to a new
+release tagged `v<version>`.
 
 ## Tests
 

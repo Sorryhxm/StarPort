@@ -1,8 +1,7 @@
 const { app, shell } = require('electron');
 
-// ปิดอัปเดตอัตโนมัติไว้จนกว่าจะมี GitHub repo ของ StarPort เอง
-// เปิดใช้: ใส่ owner/repo ที่นี่ และเพิ่ม build.publish ใน package.json ให้ชี้ repo เดียวกัน
-const RELEASES_REPO = '';
+// อัปเดตจาก GitHub Releases ของ StarPort (ต้องตรงกับ build.publish ใน package.json)
+const RELEASES_REPO = 'Sorryhxm/StarPort';
 const RELEASES_URL = `https://github.com/${RELEASES_REPO}/releases/latest`;
 const CHECK_EVERY = 4 * 60 * 60 * 1000;
 
